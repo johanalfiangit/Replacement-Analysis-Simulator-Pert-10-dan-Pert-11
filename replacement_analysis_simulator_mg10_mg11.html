@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Replacement Analysis Simulator | Mg 10 & Mg 11</title>
+<style>
+:root{
+ --yellow:#ffd43b;--yellow-soft:#fff4bf;--orange:#ff922b;--orange-soft:#fff0df;
+ --red:#e03131;--red-soft:#ffe3e3;--ink:#332b24;--muted:#75695f;
+ --paper:#fffdf7;--white:#fff;--line:#f0d9a8;--green:#2f9e44;
+ --shadow:0 10px 30px rgba(112,73,12,.10)
+}
+*{box-sizing:border-box} body{margin:0;background:#fff9e8;color:var(--ink);font:15px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+header{background:linear-gradient(115deg,#ffe066 0%,#ffa94d 60%,#ff6b6b 100%);padding:28px max(20px,calc((100% - 1240px)/2));}
+header .eyebrow{font-size:12px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase}
+h1{font-size:clamp(25px,4vw,39px);line-height:1.12;margin:8px 0;color:#3b2516}
+header p{max-width:850px;margin:0;color:#593a24}
+main{max-width:1240px;margin:24px auto;padding:0 18px 60px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+.tab{border:1px solid #e7c77b;background:#fff;padding:11px 17px;border-radius:12px;font-weight:800;cursor:pointer;color:#68451d}
+.tab.active{background:#3b3024;color:#fff;border-color:#3b3024}
+.btn{border:0;border-radius:10px;padding:10px 15px;font-weight:800;cursor:pointer;background:var(--orange);color:#3d2410}
+.btn.secondary{background:#fff;border:1px solid var(--line);color:var(--ink)}
+.btn.red{background:var(--red);color:#fff}.btn:hover,.tab:hover{filter:brightness(.97);transform:translateY(-1px)}
+.panel{display:none}.panel.active{display:block}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:17px;padding:18px;box-shadow:var(--shadow);margin-bottom:16px}
+.card h2{font-size:19px;margin:0 0 5px}.card h3{font-size:15px;margin:0 0 12px}
+.sub{color:var(--muted);font-size:13px;margin:0 0 14px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.field label{display:block;font-size:12px;font-weight:800;color:#665344;margin-bottom:5px}
+input,select{width:100%;padding:10px 11px;border:1px solid #e7d6b6;border-radius:9px;background:#fffefa;color:#2e261e;font:inherit;min-width:0}
+input:focus,select:focus{outline:3px solid #ffe08a;border-color:var(--orange)}
+.unit{font-size:11px;color:#897b6c;margin-top:3px}
+.section-title{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:14px 0}
+.metric{background:linear-gradient(145deg,#fff5c9,#ffe0bd);border:1px solid #f2cb78;border-radius:13px;padding:14px}
+.metric small{display:block;color:#755b36;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+.metric strong{display:block;font-size:clamp(17px,2vw,23px);margin-top:5px;overflow-wrap:anywhere}
+.metric em{font-style:normal;font-size:11px;color:#76624a}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px;white-space:nowrap}
+th,td{padding:9px 10px;border-bottom:1px solid #f0e3c9;text-align:right}
+th{background:#fff0c2;color:#594127;font-size:11px;text-transform:uppercase}
+th:first-child,td:first-child{text-align:left}
+tr:last-child td{border-bottom:0}
+canvas{width:100%;height:300px;display:block;background:#fff;border:1px solid #f1e4ce;border-radius:12px}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.notice{padding:12px 14px;border-radius:11px;background:#fff4d6;border-left:4px solid var(--orange);font-size:13px;color:#64451e}
+.good{background:#eaf8ed;border-left-color:var(--green)}.warn{background:#fff0f0;border-left-color:var(--red)}
+.pill{display:inline-block;padding:4px 9px;border-radius:30px;background:#fff0c2;font-size:11px;font-weight:800}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.hidden{display:none!important}
+footer{max-width:1240px;margin:0 auto;padding:0 18px 30px;color:#85786a;font-size:12px}
+@media(max-width:850px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.chart-grid{grid-template-columns:1fr}}
+@media(max-width:520px){.grid,.grid.two{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.card{padding:14px}header{padding:24px 18px}}
+</style>
+</head>
+<body>
+<header>
+ <div class="eyebrow">Media Pembelajaran • Ekonomi Teknik • D4 Teknologi Rekayasa Manufaktur</div>
+ <h1>Replacement Analysis Simulator</h1>
+ <p>Simulator interaktif Analisis Penggantian Aset untuk Mg 10 (tanpa pajak) dan Mg 11 (dengan pajak). Ubah parameter, hitung ulang, amati arus kas, biaya tahunan ekuivalen, nilai buku, pajak, dan rekomendasi keputusan.</p>
+</header>
+<main>
+ <div class="toolbar">
+  <button class="tab active" data-tab="mg10">Mg 10 · Analisis Penggantian</button>
+  <button class="tab" data-tab="mg11">Mg 11 · Analisis dengan Pajak</button>
+  <button class="btn secondary" id="resetAll">↺ Kembalikan Data Dummy</button>
+  <button class="btn secondary" id="exportCsv">↓ Ekspor Tabel CSV</button>
+ </div>
+
+ <section class="panel active" id="mg10">
+  <div class="card">
+   <div class="section-title"><div><h2>Mg 10 — Replacement Analysis (Before-Tax)</h2><p class="sub">Bandingkan aset lama (defender) dan aset pengganti (challenger) dengan metode Annual Equivalent Cost (AEC) serta analisis biaya marginal.</p></div><span class="pill">Tanpa pajak</span></div>
+   <div class="grid">
+    <div class="field"><label>Periode analisis maksimum (tahun)</label><input id="m10_n" type="number" min="1" max="20" value="8"></div>
+    <div class="field"><label>MARR / suku bunga (%)</label><input id="m10_i" type="number" min="0" max="100" step=".1" value="12"></div>
+    <div class="field"><label>Biaya overhaul defender (Rp)</label><input id="m10_overhaul" type="number" min="0" value="15000000"></div>
+    <div class="field"><label>Harga pasar defender saat ini (Rp)</label><input id="m10_market" type="number" min="0" value="35000000"></div>
+    <div class="field"><label>Harga beli challenger (Rp)</label><input id="m10_purchase" type="number" min="0" value="120000000"></div>
+    <div class="field"><label>Instalasi & commissioning (Rp)</label><input id="m10_install" type="number" min="0" value="8000000"></div>
+    <div class="field"><label>Nilai sisa challenger pada akhir umur (Rp)</label><input id="m10_salvage" type="number" min="0" value="20000000"></div>
+    <div class="field"><label>Kerangka keputusan</label><input value="Jangka panjang / tak terhingga (AEC)" readonly><div class="unit">Untuk horizon terbatas, pola penggantian perlu dibandingkan dengan PW pada horizon yang sama.</div></div>
+   </div>
+  </div>
+  <div class="card">
+   <div class="section-title"><div><h3>Data tahunan defender dan challenger</h3><p class="sub">Isi biaya operasi dan pemeliharaan (O&M) serta nilai pasar/sisa pada akhir setiap tahun. Angka awal merupakan data dummy.</p></div><button class="btn" id="m10_rebuild">Buat ulang baris tahun</button></div>
+   <div class="table-wrap"><table id="m10_table"><thead><tr><th>Tahun</th><th>O&M Defender (Rp)</th><th>Nilai pasar Defender (Rp)</th><th>O&M Challenger (Rp)</th><th>Nilai sisa Challenger (Rp)</th></tr></thead><tbody></tbody></table></div>
+   <div class="actions"><button class="btn" id="calc10">Hitung Analisis Mg 10</button></div>
+  </div>
+  <div class="card">
+   <h3>Hasil keputusan Mg 10</h3>
+   <div class="metrics">
+    <div class="metric"><small>Umur ekonomis defender</small><strong id="m10_defLife">—</strong><em>tahun</em></div>
+    <div class="metric"><small>AEC minimum defender</small><strong id="m10_defAec">—</strong><em>Rp/tahun</em></div>
+    <div class="metric"><small>Umur ekonomis challenger</small><strong id="m10_chLife">—</strong><em>tahun</em></div>
+    <div class="metric"><small>AEC minimum challenger</small><strong id="m10_chAec">—</strong><em>Rp/tahun</em></div>
+   </div>
+   <div id="m10_decision" class="notice">Masukkan data kemudian pilih Hitung Analisis Mg 10.</div>
+   <div class="chart-grid" style="margin-top:15px">
+    <div><h3>Kurva AEC berdasarkan umur pemakaian</h3><canvas id="m10_aecChart" width="700" height="300"></canvas></div>
+    <div><h3>Biaya marginal mempertahankan defender</h3><canvas id="m10_marginalChart" width="700" height="300"></canvas></div>
+   </div>
+   <h3 style="margin-top:18px">Tabel evaluasi AEC</h3>
+   <div class="table-wrap"><table id="m10_resultTable"><thead><tr><th>Aset</th><th>Umur (tahun)</th><th>Investasi awal / opportunity cost (Rp)</th><th>Nilai sisa (Rp)</th><th>PW biaya (Rp)</th><th>AEC (Rp/tahun)</th></tr></thead><tbody></tbody></table></div>
+  </div>
+  <div class="card">
+   <h3>Diagram arus kas (cash flow)</h3><p class="sub">Diagram konseptual memperlihatkan investasi awal, biaya O&M tahunan, dan penerimaan nilai sisa. Tanda minus = arus kas keluar; tanda plus = arus kas masuk.</p>
+   <canvas id="m10_cashChart" width="1100" height="260"></canvas>
+  </div>
+ </section>
+
+ <section class="panel" id="mg11">
+  <div class="card">
+   <div class="section-title"><div><h2>Mg 11 — Replacement Analysis (After-Tax)</h2><p class="sub">Menghitung depresiasi, nilai buku, laba/rugi pelepasan, penerimaan bersih setelah pajak, tax shield, dan AEC setelah pajak.</p></div><span class="pill">Dengan pajak</span></div>
+   <div class="grid">
+    <div class="field"><label>Tarif pajak marginal (%)</label><input id="m11_tax" type="number" min="0" max="100" step=".1" value="22"></div>
+    <div class="field"><label>MARR setelah pajak (%)</label><input id="m11_i" type="number" min="0" max="100" step=".1" value="10"></div>
+    <div class="field"><label>Harga perolehan challenger (Rp)</label><input id="m11_cost" type="number" min="0" value="120000000"></div>
+    <div class="field"><label>Biaya instalasi (Rp)</label><input id="m11_install" type="number" min="0" value="8000000"></div>
+    <div class="field"><label>Nilai residu fiskal (Rp)</label><input id="m11_residual" type="number" min="0" value="8000000"></div>
+    <div class="field"><label>Umur depresiasi (tahun)</label><input id="m11_life" type="number" min="1" max="20" value="5"></div>
+    <div class="field"><label>Harga jual defender saat ini (Rp)</label><input id="m11_defMarket" type="number" min="0" value="35000000"></div>
+    <div class="field"><label>Nilai buku defender saat ini (Rp)</label><input id="m11_defBV" type="number" min="0" value="45000000"></div>
+    <div class="field"><label>O&M challenger per tahun (Rp)</label><input id="m11_om" type="number" min="0" value="26000000"></div>
+    <div class="field"><label>O&M defender per tahun (Rp)</label><input id="m11_defOM" type="number" min="0" value="42000000"></div>
+    <div class="field"><label>Nilai jual challenger akhir umur (Rp)</label><input id="m11_salvage" type="number" min="0" value="20000000"></div>
+    <div class="field"><label>Metode depresiasi pembelajaran</label><select id="m11_method"><option value="sl">Garis lurus (straight-line)</option><option value="db">Saldo menurun ganda (double declining)</option></select></div>
+   </div>
+   <div class="notice" style="margin-top:14px">Model menggunakan depresiasi garis lurus atau saldo menurun ganda untuk simulasi pembelajaran. Untuk keputusan riil, gunakan jadwal penyusutan fiskal yang berlaku dan perlakuan pajak sesuai yurisdiksi perusahaan.</div>
+  </div>
+  <div class="card">
+   <h3>Perhitungan pelepasan defender saat ini</h3>
+   <div class="metrics">
+    <div class="metric"><small>Laba / (rugi) pelepasan</small><strong id="m11_gain">—</strong><em>Harga jual − nilai buku</em></div>
+    <div class="metric"><small>Pajak atas pelepasan</small><strong id="m11_disposalTax">—</strong><em>Tarif pajak × laba/rugi</em></div>
+    <div class="metric"><small>Penerimaan bersih</small><strong id="m11_netProceeds">—</strong><em>Harga jual − pajak pelepasan</em></div>
+    <div class="metric"><small>Depresiasi tahunan awal</small><strong id="m11_dep">—</strong><em>Tax shield = depresiasi × tarif pajak</em></div>
+   </div>
+   <div id="m11_disposalNote" class="notice"></div>
+  </div>
+  <div class="card">
+   <div class="section-title"><div><h3>Jadwal depresiasi dan nilai buku challenger</h3><p class="sub">Nilai buku dihitung dari biaya perolehan termasuk instalasi dikurangi akumulasi depresiasi.</p></div><button class="btn" id="calc11">Hitung Analisis Mg 11</button></div>
+   <div class="table-wrap"><table id="m11_depTable"><thead><tr><th>Tahun</th><th>Depresiasi</th><th>Akumulasi depresiasi</th><th>Nilai buku akhir</th><th>Tax shield</th></tr></thead><tbody></tbody></table></div>
+  </div>
+  <div class="card">
+   <h3>Perbandingan biaya tahunan ekuivalen setelah pajak</h3>
+   <div class="metrics">
+    <div class="metric"><small>AEC defender setelah pajak</small><strong id="m11_defAEC">—</strong><em>Rp/tahun</em></div>
+    <div class="metric"><small>AEC challenger setelah pajak</small><strong id="m11_chAEC">—</strong><em>Rp/tahun</em></div>
+    <div class="metric"><small>Tax shield tahunan</small><strong id="m11_shield">—</strong><em>Rp/tahun (tahun pertama)</em></div>
+    <div class="metric"><small>Keputusan indikatif</small><strong id="m11_choice">—</strong><em>berdasarkan AEC</em></div>
+   </div>
+   <div id="m11_decision" class="notice"></div>
+   <div class="chart-grid" style="margin-top:15px">
+    <div><h3>Arus kas bersih setelah pajak</h3><canvas id="m11_cashChart" width="700" height="300"></canvas></div>
+    <div><h3>Komponen biaya setelah pajak</h3><canvas id="m11_costChart" width="700" height="300"></canvas></div>
+   </div>
+   <h3 style="margin-top:18px">Ringkasan arus kas challenger</h3>
+   <div class="table-wrap"><table id="m11_cfTable"><thead><tr><th>Tahun</th><th>Investasi</th><th>O&M setelah pajak</th><th>Tax shield depresiasi</th><th>Nilai sisa setelah pajak</th><th>Arus kas bersih</th></tr></thead><tbody></tbody></table></div>
+  </div>
+ </section>
+ <div class="card">
+  <h3>Petunjuk penggunaan simulator</h3>
+  <ol>
+   <li>Pilih tab Mg 10 atau Mg 11 sesuai materi perkuliahan.</li>
+   <li>Ganti nilai dummy dengan data primer hasil observasi, data sekunder perusahaan, atau asumsi skenario.</li>
+   <li>Gunakan satuan rupiah secara konsisten. O&M dapat mencakup energi, tenaga kerja, pelumas, suku cadang, dan pemeliharaan.</li>
+   <li>Klik tombol hitung. Grafik, tabel, dan indikator keputusan akan diperbarui.</li>
+   <li>Gunakan tombol ekspor CSV untuk mengunduh tabel data utama.</li>
+  </ol>
+  <div class="notice warn"><b>Batasan model:</b> simulator ini merupakan media pembelajaran, bukan aplikasi perpajakan atau penilaian investasi tersertifikasi. Mg 10 memakai pendekatan AEC biaya tahunan ekuivalen dan marginal cost sederhana. Mg 11 memakai model pajak sederhana dengan depresiasi yang dapat dipilih; belum memasukkan PPN, kredit pajak yang tertunda, aturan kompensasi rugi, perubahan tarif, inflasi, pembiayaan utang, atau jadwal fiskal spesifik. Untuk horizon terbatas, susun seluruh pola penggantian dan bandingkan PW pada horizon yang sama.</div>
+ </div>
+</main>
+<footer>Replacement Analysis Simulator • Versi pembelajaran 1.0 • Seluruh angka awal adalah data dummy dan dapat diubah pengguna.</footer>
+<script>
+const $=id=>document.getElementById(id);
+const num=id=>Math.max(0,Number($(id).value)||0);
+const fmt=x=>new Intl.NumberFormat('id-ID',{maximumFractionDigits:0}).format(Number.isFinite(x)?x:0);
+const money=x=>'Rp '+fmt(x);
+const pct=id=>num(id)/100;
+const factor=(i,n)=>i===0?1/n:i/ (1-Math.pow(1+i,-n));
+const pwAnnuity=(a,i,n)=>i===0?a*n:a*(1-Math.pow(1+i,-n))/i;
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let data10=[];
+function build10(){
+ const n=Math.min(20,Math.max(1,Math.floor(num('m10_n')||8)));
+ const old=data10.slice(); data10=[];
+ for(let y=1;y<=n;y++){
+  data10.push(old[y-1]||{d:18000000+(y-1)*3500000,dm:Math.max(3000000,35000000-(y-1)*4500000),c:26000000+(y-1)*2200000,cs:Math.max(2000000,20000000-(y-1)*2500000)});
+ }
+ $('m10_table').querySelector('tbody').innerHTML=data10.map((r,k)=>`<tr><td>${k+1}</td><td><input type="number" min="0" data-y="${k}" data-k="d" value="${r.d}"></td><td><input type="number" min="0" data-y="${k}" data-k="dm" value="${r.dm}"></td><td><input type="number" min="0" data-y="${k}" data-k="c" value="${r.c}"></td><td><input type="number" min="0" data-y="${k}" data-k="cs" value="${r.cs}"></td></tr>`).join('');
+ $('m10_table').querySelectorAll('input').forEach(el=>el.addEventListener('input',e=>{data10[+e.target.dataset.y][e.target.dataset.k]=Math.max(0,Number(e.target.value)||0)}));
+}
+function chart(id,series,opts={}){
+ const c=$(id),ctx=c.getContext('2d'),w=c.width,h=c.height;ctx.clearRect(0,0,w,h);
+ ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+ const pad={l:75,r:20,t:24,b:42},pw=w-pad.l-pad.r,ph=h-pad.t-pad.b;
+ const all=series.flatMap(s=>s.values).filter(Number.isFinite);let max=Math.max(1,...all),min=Math.min(0,...all);
+ if(opts.zeroBased!==false)min=Math.min(0,min);const span=max-min||1;
+ ctx.strokeStyle='#eadfc9';ctx.lineWidth=1;ctx.font='11px sans-serif';ctx.fillStyle='#786a59';
+ for(let j=0;j<=4;j++){let y=pad.t+ph*j/4;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();ctx.fillText(fmt(max-span*j/4),5,y+4)}
+ const n=Math.max(1,...series.map(s=>s.values.length));
+ series.forEach((s,si)=>{ctx.strokeStyle=s.color;ctx.fillStyle=s.color;ctx.lineWidth=2.5;ctx.beginPath();s.values.forEach((v,k)=>{let x=pad.l+(n===1?pw/2:pw*k/(n-1)),y=pad.t+ph-(v-min)/span*ph;if(k===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)});ctx.stroke();s.values.forEach((v,k)=>{let x=pad.l+(n===1?pw/2:pw*k/(n-1)),y=pad.t+ph-(v-min)/span*ph;ctx.beginPath();ctx.arc(x,y,3.5,0,Math.PI*2);ctx.fill()})});
+ const labels=opts.labels||Array.from({length:n},(_,i)=>String(i+1));labels.forEach((lab,k)=>{let x=pad.l+(n===1?pw/2:pw*k/(n-1));ctx.fillStyle='#786a59';ctx.textAlign='center';ctx.fillText(lab,x,h-14)});
+ let lx=pad.l;series.forEach(s=>{ctx.fillStyle=s.color;ctx.fillRect(lx,7,12,4);ctx.fillStyle='#574b3d';ctx.textAlign='left';ctx.fillText(s.name,lx+17,13);lx+=Math.max(100,s.name.length*7+28)});
+}
+function cashChart(id,flows){
+ const c=$(id),ctx=c.getContext('2d'),w=c.width,h=c.height;ctx.clearRect(0,0,w,h);ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+ let max=Math.max(1,...flows.map(x=>Math.abs(x))),mid=h/2;ctx.strokeStyle='#8c7b65';ctx.beginPath();ctx.moveTo(35,mid);ctx.lineTo(w-15,mid);ctx.stroke();
+ const slot=(w-65)/flows.length;flows.forEach((v,i)=>{let bh=Math.abs(v)/max*(h*.34),x=45+i*slot+slot*.2;ctx.fillStyle=v<0?'#e03131':'#2f9e44';ctx.fillRect(x,v<0?mid:mid-bh,slot*.6,bh);ctx.fillStyle='#514638';ctx.font='11px sans-serif';ctx.textAlign='center';ctx.fillText(i===0?'T0':'T'+i,x+slot*.3,h-12);ctx.save();ctx.translate(x+slot*.3,v<0?mid+bh+15:mid-bh-7);ctx.rotate(-Math.PI/2);ctx.fillText(fmt(v),0,0);ctx.restore()});
+}
+function run10(){
+ const n=data10.length,i=pct('m10_i'),oldP=num('m10_market')+num('m10_overhaul'),newP=num('m10_purchase')+num('m10_install');
+ const def=[],chall=[];
+ for(let k=1;k<=n;k++){
+  const dSal=data10[k-1].dm,cSal=data10[k-1].cs;
+  let dpw=oldP+data10.slice(0,k).reduce((s,r,j)=>s+r.d/Math.pow(1+i,j+1),0)-dSal/Math.pow(1+i,k);
+  let cpw=newP+data10.slice(0,k).reduce((s,r,j)=>s+r.c/Math.pow(1+i,j+1),0)-cSal/Math.pow(1+i,k);
+  def.push({k,pw:dpw,aec:dpw*factor(i,k),sal:dSal,om:data10[k-1].d});
+  chall.push({k,pw:cpw,aec:cpw*factor(i,k),sal:cSal,om:data10[k-1].c});
+ }
+ const dBest=def.reduce((a,b)=>b.aec<a.aec?b:a),cBest=chall.reduce((a,b)=>b.aec<a.aec?b:a);
+ $('m10_defLife').textContent=dBest.k;$('m10_defAec').textContent=money(dBest.aec);$('m10_chLife').textContent=cBest.k;$('m10_chAec').textContent=money(cBest.aec);
+ const decision=dBest.aec>cBest.aec?'Ganti defender sekarang: AEC minimum challenger lebih rendah.':'Pertahankan defender untuk saat ini: AEC minimum defender tidak lebih tinggi.';
+ $('m10_decision').className='notice '+(dBest.aec>cBest.aec?'warn':'good');
+ $('m10_decision').innerHTML='<b>Keputusan indikatif:</b> '+decision+'<br>Bandingkan juga biaya marginal mempertahankan defender dengan AEC challenger sebelum keputusan final.';
+ $('m10_resultTable').querySelector('tbody').innerHTML=[['Defender',dBest.k,oldP,dBest.sal,dBest.pw,dBest.aec],['Challenger',cBest.k,newP,cBest.sal,cBest.pw,cBest.aec]].map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${money(r[2])}</td><td>${money(r[3])}</td><td>${money(r[4])}</td><td>${money(r[5])}</td></tr>`).join('');
+ chart('m10_aecChart',[{name:'Defender',values:def.map(x=>x.aec),color:'#e03131'},{name:'Challenger',values:chall.map(x=>x.aec),color:'#f08c00'}],{labels:def.map(x=>'Tahun '+x.k)});
+ const marginal=data10.map((r,k)=>{let market=data10[k].dm,om=r.d,sal=k+1<data10.length?data10[k+1].dm:0;return market*(1+i)+om-sal});
+ chart('m10_marginalChart',[{name:'Biaya marginal',values:marginal,color:'#e03131'},{name:'AEC challenger minimum',values:marginal.map(()=>cBest.aec),color:'#f08c00'}],{labels:data10.map((x,k)=>'Tahun '+(k+1))});
+ const flow=[-oldP,...data10.slice(0,dBest.k).map((r,k)=>-r.d+(k===dBest.k-1?r.dm:0))];cashChart('m10_cashChart',flow);
+ window.csvRows=[['Mg10','Defender/Challenger','Umur','Investasi','Salvage','PW','AEC'],['Defender',dBest.k,oldP,dBest.sal,dBest.pw,dBest.aec],['Challenger',cBest.k,newP,cBest.sal,cBest.pw,cBest.aec]];
+}
+function depreciation(cost,residual,life,method){
+ let book=cost,acc=0,arr=[];
+ for(let y=1;y<=life;y++){
+  let dep=method==='sl'?(cost-residual)/life:Math.min(book,Math.max(0,book*2/life));
+  if(y===life)dep=Math.max(0,book-residual);
+  dep=Math.min(dep,Math.max(0,book-residual));acc+=dep;book=Math.max(residual,book-dep);
+  arr.push({y,dep,acc,book});
+ }return arr;
+}
+function afterTaxAEC(initial,om,depArr,salvage,tax,i){
+ let pw=initial,life=depArr.length;
+ depArr.forEach((r,k)=>{let afterOM=om*(1-tax),shield=r.dep*tax;pw+=(afterOM-shield)/Math.pow(1+i,k+1)});
+ let bv=depArr[life-1].book,disposalTax=(salvage-bv)*tax,netSalvage=salvage-disposalTax;
+ pw-=netSalvage/Math.pow(1+i,life);
+ return {pw,aec:pw*factor(i,life),netSalvage,depArr};
+}
+function run11(){
+ const tax=pct('m11_tax'),i=pct('m11_i'),cost=num('m11_cost')+num('m11_install'),res=num('m11_residual'),life=Math.max(1,Math.min(20,Math.floor(num('m11_life')))),om=num('m11_om'),defom=num('m11_defOM'),sal=num('m11_salvage');
+ const dep=depreciation(cost,res,life,$('m11_method').value);
+ const defMarket=num('m11_defMarket'),defBV=num('m11_defBV'),gain=defMarket-defBV,disposalTax=gain*tax,net=defMarket-disposalTax;
+ $('m11_gain').textContent=money(gain);$('m11_disposalTax').textContent=money(disposalTax);$('m11_netProceeds').textContent=money(net);$('m11_dep').textContent=money(dep[0].dep);
+ $('m11_disposalNote').innerHTML=`Pelepasan defender: harga jual ${money(defMarket)} dikurangi nilai buku ${money(defBV)} menghasilkan ${gain>=0?'laba':'rugi'} ${money(Math.abs(gain))}. Pajak/(manfaat pajak) dihitung ${money(disposalTax)}. Penerimaan bersih = ${money(net)}. Model mengasumsikan laba/rugi langsung dikenai/menghasilkan manfaat pajak pada tarif yang sama.`;
+ $('m11_depTable').querySelector('tbody').innerHTML=dep.map(r=>`<tr><td>${r.y}</td><td>${money(r.dep)}</td><td>${money(r.acc)}</td><td>${money(r.book)}</td><td>${money(r.dep*tax)}</td></tr>`).join('');
+ const challenger=afterTaxAEC(cost,om,dep,sal,tax,i);
+ // Defender is treated as retained for the same comparison horizon; its current market value is opportunity cost.
+ const defDep=Array.from({length:life},()=>({dep:0,book:defBV}));
+ const defender=afterTaxAEC(defMarket,defom,defDep,defMarket*.15,tax,i);
+ $('m11_defAEC').textContent=money(defender.aec);$('m11_chAEC').textContent=money(challenger.aec);$('m11_shield').textContent=money(dep[0].dep*tax);
+ const choice=defender.aec>challenger.aec?'Ganti':'Pertahankan';
+ $('m11_choice').textContent=choice;
+ $('m11_decision').className='notice '+(choice==='Ganti'?'warn':'good');
+ $('m11_decision').innerHTML=`<b>Keputusan indikatif: ${choice}.</b> AEC setelah pajak challenger ${money(challenger.aec)} dibandingkan dengan defender ${money(defender.aec)}. Nilai lebih rendah menunjukkan alternatif biaya tahunan ekuivalen yang lebih ekonomis. Defender disederhanakan sebagai aset tanpa depresiasi tersisa pada horizon pembanding; sesuaikan data depresiasi defender untuk analisis aktual.`;
+ let cf=[-cost],omSeries=[],shieldSeries=[],salSeries=[];
+ for(let k=0;k<life;k++){let afterOM=om*(1-tax),shield=dep[k].dep*tax,afterSal=k===life-1?challenger.netSalvage:0;omSeries.push(afterOM);shieldSeries.push(shield);salSeries.push(afterSal);cf.push(-afterOM+shield+afterSal)}
+ cashChart('m11_cashChart',cf);
+ chart('m11_costChart',[{name:'O&M setelah pajak',values:omSeries,color:'#e03131'},{name:'Tax shield',values:shieldSeries,color:'#2f9e44'}],{labels:dep.map(r=>'Tahun '+r.y)});
+ $('m11_cfTable').querySelector('tbody').innerHTML=dep.map((r,k)=>`<tr><td>${r.y}</td><td>${k===0?money(-cost):'—'}</td><td>${money(omSeries[k])}</td><td>${money(shieldSeries[k])}</td><td>${money(salSeries[k])}</td><td>${money(-omSeries[k]+shieldSeries[k]+salSeries[k]-(k===0?cost:0))}</td></tr>`).join('');
+ window.csvRows=[['Mg11','Tahun','Depresiasi','Akumulasi','Nilai buku','Tax shield'],...dep.map(r=>['Challenger',r.y,r.dep,r.acc,r.book,r.dep*tax])];
+}
+function reset(){
+ ['m10_n','m10_i','m10_overhaul','m10_market','m10_purchase','m10_install','m10_salvage','m11_tax','m11_i','m11_cost','m11_install','m11_residual','m11_life','m11_defMarket','m11_defBV','m11_om','m11_defOM','m11_salvage'].forEach((id,k)=>$(id).value=[8,12,15000000,35000000,120000000,8000000,20000000,22,10,120000000,8000000,8000000,5,35000000,45000000,26000000,42000000,20000000][k]);
+ $('m11_method').value='sl';build10();run10();run11();
+}
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===b.dataset.tab));setTimeout(()=>{if(b.dataset.tab==='mg10')run10();else run11()},40)}));
+$('m10_rebuild').addEventListener('click',()=>{build10();run10()});$('calc10').addEventListener('click',run10);$('calc11').addEventListener('click',run11);$('resetAll').addEventListener('click',reset);
+$('exportCsv').addEventListener('click',()=>{let rows=window.csvRows||[];let csv=rows.map(r=>r.map(x=>'"'+String(x??'').replace(/"/g,'""')+'"').join(';')).join('\n');let blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='hasil-replacement-analysis.csv';a.click();URL.revokeObjectURL(a.href)});
+['m10_i','m10_market','m10_overhaul','m10_purchase','m10_install','m10_salvage'].forEach(id=>$(id).addEventListener('change',run10));
+['m11_tax','m11_i','m11_cost','m11_install','m11_residual','m11_life','m11_defMarket','m11_defBV','m11_om','m11_defOM','m11_salvage','m11_method'].forEach(id=>$(id).addEventListener('change',run11));
+build10();run10();run11();
+</script>
+</body>
+</html>
